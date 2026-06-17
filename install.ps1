@@ -1,6 +1,6 @@
 # =============================================================================
 # pd-ai-tools setup script
-# Source: https://github.com/brandonbillings-sae/pd-ai-tools-setup
+# Source: https://github.com/brandonbillings-sae/pd-ai-tools-setup/blob/main/install.ps1
 #
 # WHAT THIS SCRIPT DOES — review before running:
 #   1. Installs Node.js, Git, and Python via winget (user scope, no admin needed)
@@ -40,7 +40,7 @@ Write-Host @"
 
 =====================================================================
   pd-ai-tools installer
-  github.com/bbillings/pd-ai-tools-setup
+  github.com/brandonbillings-sae/pd-ai-tools-setup
 =====================================================================
 
 This script will:
