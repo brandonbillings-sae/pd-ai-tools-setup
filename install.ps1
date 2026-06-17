@@ -2,6 +2,12 @@
 # pd-ai-tools setup script
 # Source: https://github.com/brandonbillings-sae/pd-ai-tools-setup/blob/main/install.ps1
 #
+# HOW TO DOWNLOAD AND RUN:
+#   irm https://raw.githubusercontent.com/brandonbillings-sae/pd-ai-tools-setup/main/install.ps1 -OutFile "$env:USERPROFILE\Downloads\setup.ps1"
+#   notepad "$env:USERPROFILE\Downloads\setup.ps1"
+#   cd "$env:USERPROFILE\Downloads"
+#   .\setup.ps1
+#
 # WHAT THIS SCRIPT DOES — review before running:
 #   1. Installs Node.js, Git, and Python via winget (user scope, no admin needed)
 #   2. Installs Claude Code via npm
