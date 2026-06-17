@@ -1,6 +1,6 @@
 # =============================================================================
 # pd-ai-tools setup script
-# Source: https://github.com/bbillings/pd-ai-tools-setup
+# Source: https://github.com/brandonbillings-sae/pd-ai-tools-setup
 #
 # WHAT THIS SCRIPT DOES — review before running:
 #   1. Installs Node.js, Git, and Python via winget (user scope, no admin needed)
@@ -8,6 +8,13 @@
 #   3. Clones the pd-ai-tools GitLab repo to your user folder
 #   4. Creates a .env credential template you fill in manually
 #   5. Copies Claude Code skills to ~/.claude/skills/
+#
+# ALREADY INSTALLED? No problem — each step checks first:
+#   - Node.js / Git / Python: skipped if winget already shows them installed
+#   - Claude Code: skipped if already present in npm globals
+#   - Repo clone: skipped if the destination folder already exists
+#   - .env: skipped if a .env file already exists in the repo folder
+#   - Skills: always refreshed (ensures you have the latest version)
 #
 # WHAT IT DOES NOT DO:
 #   - Store or transmit your credentials anywhere
