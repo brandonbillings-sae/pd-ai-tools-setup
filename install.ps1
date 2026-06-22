@@ -14,6 +14,7 @@
 #   3. Clones the pd-ai-tools GitLab repo to your user folder
 #   4. Creates a .env credential template you fill in manually
 #   5. Copies Claude Code skills to ~/.claude/skills/
+#   6. Configures GitLab MCP token in ~/.claude/settings.json
 #
 # ALREADY INSTALLED? No problem — each step checks first:
 #   - Node.js / Git / Python: skipped if winget already shows them installed
@@ -138,8 +139,18 @@ if (Test-Path $dest) {
                [Runtime.InteropServices.Marshal]::SecureStringToBSTR($patSecure))
     $encodedEmail = [Uri]::EscapeDataString($email)
 
-    git clone "https://${encodedEmail}:${pat}@gitlab.com/sae_devops/saepri-pd-tools.git" $dest
+    # Store credentials in Windows Credential Manager before cloning so the
+    # remote URL stays clean (no embedded credentials). Claude Code reads the
+    # remote URL to identify the GitLab project -- embedded credentials break that.
+    cmdkey /generic:"LegacyGeneric:target=git:https://gitlab.com" /user:"$email" /pass:"$pat" | Out-Null
+
+    git clone "https://gitlab.com/sae_devops/saepri-pd-tools.git" $dest
     Write-OK "Repo cloned to $dest"
+    Write-OK "GitLab credentials stored in Windows Credential Manager"
+
+    # Save to script-level variables so Step 4 can write them to .env
+    $script:gitlabEmail = $email
+    $script:gitlabPat   = $pat
 }
 
 Set-Location $dest
@@ -162,7 +173,14 @@ if (Test-Path ".env") {
     $sbxUrl   = if ($org -eq "SAE") { "https://sandbox-training.sae.org" }  else { "https://your-sandbox.docebosaas.com" }
     $accOrgId = if ($org -eq "SAE") { "98705" }                             else { "105825" }
 
+    $gitlabEmailVal = if ($script:gitlabEmail) { $script:gitlabEmail } else { "your-gitlab-email" }
+    $gitlabPatVal   = if ($script:gitlabPat)   { $script:gitlabPat }   else { "your-personal-access-token" }
+
     @"
+# ── GitLab ───────────────────────────────────────────────────────
+GITLAB_EMAIL=$gitlabEmailVal
+GITLAB_PAT=$gitlabPatVal
+
 # ── Docebo Production ────────────────────────────────────────────
 PROD_URL=$prodUrl
 PROD_CLIENT_ID=your-client-id
@@ -192,7 +210,7 @@ ACCREDIBLE_JWT=Bearer eyJ...replace-me
 ## STEP 5 — Install Claude Code skills
 # =============================================================================
 
-Write-Step "Step 5/5 — Installing Claude Code skills"
+Write-Step "Step 5/6 — Installing Claude Code skills"
 
 $skillsDir = "$env:USERPROFILE\.claude\skills"
 if (-not (Test-Path $skillsDir)) {
@@ -208,6 +226,49 @@ foreach ($skill in @("docebo-api", "docebo-sync", "accredible-api")) {
         Write-Warn "skills\$skill not found in repo — skipping"
     }
 }
+
+# =============================================================================
+## STEP 6 — Configure GitLab MCP in Claude Code settings
+# =============================================================================
+
+Write-Step "Step 6/6 — GitLab MCP configuration"
+
+$claudeSettingsPath = "$env:USERPROFILE\.claude\settings.json"
+$claudeDir = "$env:USERPROFILE\.claude"
+
+if (-not (Test-Path $claudeDir)) {
+    New-Item -ItemType Directory -Path $claudeDir | Out-Null
+}
+
+# Read existing settings or start fresh
+if (Test-Path $claudeSettingsPath) {
+    $settings = Get-Content $claudeSettingsPath -Raw | ConvertFrom-Json
+} else {
+    $settings = [PSCustomObject]@{}
+}
+
+# Ensure env block exists
+if (-not $settings.PSObject.Properties["env"]) {
+    $settings | Add-Member -MemberType NoteProperty -Name "env" -Value ([PSCustomObject]@{})
+}
+
+# Write GITLAB_TOKEN (same value as PAT)
+$patForMcp = if ($script:gitlabPat) { $script:gitlabPat } else { "" }
+if ($patForMcp) {
+    $settings.env | Add-Member -MemberType NoteProperty -Name "GITLAB_TOKEN" -Value $patForMcp -Force
+    Write-OK "GITLAB_TOKEN added to Claude settings"
+} else {
+    Write-Warn "No GitLab PAT found — add GITLAB_TOKEN manually to $claudeSettingsPath"
+}
+
+# Ensure enabledPlugins block exists and enable GitLab plugin
+if (-not $settings.PSObject.Properties["enabledPlugins"]) {
+    $settings | Add-Member -MemberType NoteProperty -Name "enabledPlugins" -Value ([PSCustomObject]@{})
+}
+$settings.enabledPlugins | Add-Member -MemberType NoteProperty -Name "gitlab@claude-plugins-official" -Value $true -Force
+
+$settings | ConvertTo-Json -Depth 10 | Set-Content $claudeSettingsPath
+Write-OK "GitLab MCP plugin enabled in Claude settings"
 
 # =============================================================================
 ## DONE
