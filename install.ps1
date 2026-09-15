@@ -169,7 +169,7 @@ if (Test-Path ".env") {
         $org = (Read-Host "   Your org (SAE or PRI)").ToUpper()
     }
 
-    $prodUrl  = if ($org -eq "SAE") { "https://training.sae.org" }          else { "https://your-lms.docebosaas.com" }
+    $prodUrl  = if ($org -eq "SAE") { "https://sae.docebosaas.com" }         else { "https://your-lms.docebosaas.com" }
     $sbxUrl   = if ($org -eq "SAE") { "https://sandbox-training.sae.org" }  else { "https://your-sandbox.docebosaas.com" }
     $accOrgId = if ($org -eq "SAE") { "98705" }                             else { "105825" }
 
